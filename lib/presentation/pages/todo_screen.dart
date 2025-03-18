@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../blocs/todo/todo_bloc.dart';
 
@@ -8,13 +9,17 @@ class TodoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final todoBloc = context.read<TodoBloc>();
+    final router = GoRouter.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text('To-Do List')),
-      body: BlocBuilder<TodoBloc, TodoState>(
-        builder: (context, state) {
-          if (state is TodoLoading) {
+      body: BlocBuilder<TodoBloc, TodoState>(builder: (context, state) {
+        switch (state) {
+          case TodoLoading():
             return Center(child: CircularProgressIndicator());
-          } else if (state is TodoLoaded) {
+
+          case TodoLoaded():
             return ListView.builder(
               itemCount: state.todos.length,
               itemBuilder: (context, index) {
@@ -22,17 +27,22 @@ class TodoScreen extends StatelessWidget {
                 return ListTile(
                   title: Text(todo.title),
                   trailing: Icon(todo.completed ? Icons.check : Icons.close),
+                  onTap: () {
+                    router.push('/detail', extra: todo);
+                  },
                 );
               },
             );
-          } else if (state is TodoError) {
+
+          case TodoError():
             return Center(child: Text(state.message));
-          }
-          return Center(child: Text("Press the button to load todos"));
-        },
-      ),
+
+          default:
+            return Center(child: Text("Press the button to load todos"));
+        }
+      }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.read<TodoBloc>().add(FetchTodosEvent()),
+        onPressed: () => todoBloc.add(FetchTodosEvent()),
         child: Icon(Icons.refresh),
       ),
     );
